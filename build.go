@@ -40,9 +40,10 @@ func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 		cmd.Wait()
 	}
 	biber := func() {
+		bcfPath := strings.Replace(texPath, ".tex", ".bcf", 1)
 		cmd := exec.Command("biber",
 			"-output-directory", outDir,
-			texPath)
+			bcfPath)
 		cmd.Stderr = cmd.Stdout
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
