@@ -101,6 +101,11 @@ var expectedOutputExts = map[string]bool{
 
 // checkMultipass - Check if a file needs two compilation passes to be fully built
 func checkMultipass(path string) bool {
+	var err error
+	path, err = filepath.Abs(path)
+	if err != nil {
+		panic(err)
+	}
 	texBase := strings.TrimSuffix(path, ".tex")
 	parts := strings.Split(path, "/")
 	dir := strings.Join(parts[:len(parts)-1], "/")
