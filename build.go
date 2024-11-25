@@ -13,6 +13,10 @@ import (
 // intended to run on its own goroutine for optimal parallelization
 func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 	outDir := filepath.Dir(texPath)
+	relPath, err := filepath.Rel(outDir, texPath)
+	if err != nil {
+		panic("Failed to get relative texPath")
+	}
 	// Determine backend
 	backend := getBackend(texPath)
 	// Configure logging
@@ -23,9 +27,9 @@ func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 
 	latex := func() {
 		cmd := exec.Command(backend,
-			fmt.Sprintf("-output-directory=%s", outDir),
 			"-halt-on-error", // halt-on-error is critical to prevent any latex jobs from entering an interactive prompt during build
-			texPath)
+			relPath)
+		cmd.Dir = outDir
 		cmd.Stderr = cmd.Stdout
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
@@ -40,10 +44,10 @@ func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 		cmd.Wait()
 	}
 	biber := func() {
-		bcfPath := strings.Replace(texPath, ".tex", ".bcf", 1)
+		bcfPath := strings.Replace(relPath, ".tex", ".bcf", 1)
 		cmd := exec.Command("biber",
-			"-output-directory", outDir,
 			bcfPath)
+		cmd.Dir = outDir
 		cmd.Stderr = cmd.Stdout
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
