@@ -64,9 +64,9 @@ func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 
 	latex()
 	if useBiber {
-		// Run biber + latex x2
-		biber()
+		// Run latex + biber + latex to generate bibliography
 		latex()
+		biber()
 		latex()
 	} else if checkMultipass(texPath) {
 		latex()
