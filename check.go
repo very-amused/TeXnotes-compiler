@@ -51,12 +51,13 @@ func getBibDepends(path string) (bibDepends []string) {
 	}
 	// Open file for scanning
 	scanner := bufio.NewScanner(file)
+	dir := filepath.Dir(path)
 
 	// Find \addbibresource lines
 	for scanner.Scan() {
 		line := scanner.Text()
 		if matches := bibResourceRegex.FindStringSubmatch(line); len(matches) == 2 {
-			bibDepends = append(bibDepends, matches[1])
+			bibDepends = append(bibDepends, filepath.Join(dir, matches[1]))
 		}
 	}
 	return bibDepends
