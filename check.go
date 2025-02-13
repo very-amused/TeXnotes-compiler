@@ -13,7 +13,8 @@ import (
 // Regexes
 var (
 	bibResourceRegex = regexp.MustCompile("\\\\addbibresource\\{(.+)\\}")
-	usePackageRegex  = regexp.MustCompile("\\\\usepackage(?:\\[(.+)\\])?\\{(.+)\\}")
+	usePackageRegex  = regexp.MustCompile("\\\\usepackage\\{(.+)\\}")
+	bibTexRegex      = regexp.MustCompile("\\\\bibliography(?:style)?\\{(.+)\\}")
 )
 
 // Check a file for incremental builds
@@ -83,8 +84,8 @@ func getBackend(path string) (backend string) {
 	// Check if any packages requiring alternative backends are used
 	for scanner.Scan() {
 		line := scanner.Text()
-		if matches := usePackageRegex.FindStringSubmatch(line); len(matches) == 3 {
-			pkg := matches[2]
+		if matches := usePackageRegex.FindStringSubmatch(line); len(matches) == 2 {
+			pkg := matches[1]
 			switch pkg {
 			case "unicode-math":
 				return lualatex
@@ -114,32 +115,8 @@ func getBibBackend(path string) (bibBackend string) {
 	// Check if any bibtex commands are used
 	for scanner.Scan() {
 		line := scanner.Text()
-		if matches := usePackageRegex.FindStringSubmatch(line); len(matches) == 3 {
-			pkg := matches[2]
-			options := matches[1]
-			if pkg != "biblatex" {
-				continue
-			}
-			// Parse options to see if a backend is specified
-			if options == "" {
-				break
-			}
-			opts := strings.Split(options, ",")
-			for _, opt := range opts {
-				opt = strings.TrimSpace(opt)
-				kv := strings.SplitN(opt, "=", 2)
-				if len(kv) == 2 && kv[0] == "backend" {
-					switch kv[1] {
-					case biber:
-						return biber
-					case bibtex:
-						return bibtex
-					default:
-						fmt.Fprintln(os.Stderr, "Unknown biblatex backend:", kv[1])
-						os.Exit(1)
-					}
-				}
-			}
+		if bibTexRegex.MatchString(line) {
+			return bibtex
 		}
 	}
 
