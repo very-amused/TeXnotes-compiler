@@ -14,12 +14,16 @@ import (
 var (
 	bibResourceRegex = regexp.MustCompile("\\\\addbibresource\\{(.+)\\}")
 	usePackageRegex  = regexp.MustCompile("\\\\usepackage\\{(.+)\\}")
+	bibTexRegex      = regexp.MustCompile("\\\\bibliography(?:style)?\\{(.+)\\}")
 )
 
 // Check a file for incremental builds
-func checkFile(infile, outfile string) (skipBuild, useBiber bool) {
+// bibBackend will either be empty (no bibliography will be generated), "biber" (preferred), or "bibtex" if required by the document
+func checkFile(infile, outfile string) (skipBuild bool, bibBackend string) {
 	bibDepends := getBibDepends(infile)
-	useBiber = len(bibDepends) > 0
+	if len(bibDepends) > 0 {
+		bibBackend = getBibBackend(infile)
+	}
 	if pdfStat := stat(outfile); pdfStat != nil {
 		if texStat := stat(infile); texStat != nil {
 			// If the output PDF's modtime isn't older than the input tex (or any of its bibDepends), building it can be skipped
@@ -40,7 +44,7 @@ func checkFile(infile, outfile string) (skipBuild, useBiber bool) {
 			}
 		}
 	}
-	return skipBuild, useBiber
+	return skipBuild, bibBackend
 }
 
 // Find all .bib files a .tex file depends on by searching for \addbibresource statements
@@ -92,6 +96,32 @@ func getBackend(path string) (backend string) {
 	}
 	// Default to pdflatex
 	return pdflatex
+}
+
+// Determine which bibliography generation backend to use for a file
+func getBibBackend(path string) (bibBackend string) {
+	const (
+		biber  = "biber"
+		bibtex = "bibtex"
+	)
+
+	// Open file for scanning
+	file, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	scanner := bufio.NewScanner(file)
+
+	// Check if any bibtex commands are used
+	for scanner.Scan() {
+		line := scanner.Text()
+		if bibTexRegex.MatchString(line) {
+			return bibtex
+		}
+	}
+
+	// Default to biber
+	return biber
 }
 
 var expectedOutputExts = map[string]bool{

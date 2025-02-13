@@ -37,12 +37,12 @@ func main() {
 		if len(outfile) == 0 {
 			outfile = strings.TrimSuffix(infile, ".tex") + ".pdf"
 		}
-		skipBuild, useBiber := checkFile(infile, outfile)
+		skipBuild, bibBackend := checkFile(infile, outfile)
 		if skipBuild {
 			fmt.Printf("%s is up to date\n", outfile)
 		} else {
 			wg.Add(1)
-			go buildPDF(infile, useBiber, &wg)
+			go buildPDF(infile, bibBackend, &wg)
 			wg.Wait()
 		}
 		return

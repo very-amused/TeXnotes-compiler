@@ -11,7 +11,7 @@ import (
 
 // buildPDF - Build a PDF using latex, optionally applying the full latex -> biber -> latex x2 pipeline for bibliography,
 // intended to run on its own goroutine for optimal parallelization
-func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
+func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 	outDir := filepath.Dir(texPath)
 	relPath, err := filepath.Rel(outDir, texPath)
 	if err != nil {
@@ -61,11 +61,34 @@ func buildPDF(texPath string, useBiber bool, wg *sync.WaitGroup) {
 		// Wait for process to close
 		cmd.Wait()
 	}
+	bibtex := func() {
+		auxPath := strings.Replace(relPath, ".tex", ".aux", 1)
+		cmd := exec.Command("bibtex",
+			auxPath)
+		cmd.Dir = outDir
+		cmd.Stderr = cmd.Stdout
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			panic("Failed to open pipe for backend command stdout")
+		}
+		scanner := bufio.NewScanner(stdout)
+		cmd.Start()
+		for scanner.Scan() {
+			log(scanner.Text())
+		}
+		// Wait for process to close
+		cmd.Wait()
+	}
 
 	latex()
-	if useBiber {
-		// Run biber + latex to generate bibliography
-		biber()
+	if bibBackend != "" {
+		// Run biber/bibtex + latex x2 to generate bibliography
+		if bibBackend == "biber" {
+			biber()
+		} else {
+			bibtex()
+		}
+		latex()
 		latex()
 	} else if checkMultipass(texPath) {
 		latex()
