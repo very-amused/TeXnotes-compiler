@@ -14,7 +14,7 @@ import (
 var (
 	bibResourceRegex = regexp.MustCompile("\\\\addbibresource\\{(.+)\\}")
 	usePackageRegex  = regexp.MustCompile("\\\\usepackage\\{(.+)\\}")
-	bibTexRegex      = regexp.MustCompile("\\\\bibliography(?:style)?\\{(.+)\\}")
+	bibTexRegex      = regexp.MustCompile("\\\\bibliography\\{(.+)\\}")
 )
 
 // Check a file for incremental builds
@@ -57,10 +57,12 @@ func getBibDepends(path string) (bibDepends []string) {
 	scanner := bufio.NewScanner(file)
 	dir := filepath.Dir(path)
 
-	// Find \addbibresource lines
+	// Find \addbibresource or \bibliography lines
 	for scanner.Scan() {
 		line := scanner.Text()
 		if matches := bibResourceRegex.FindStringSubmatch(line); len(matches) == 2 {
+			bibDepends = append(bibDepends, filepath.Join(dir, matches[1]))
+		} else if matches := bibTexRegex.FindStringSubmatch(line); len(matches) == 2 {
 			bibDepends = append(bibDepends, filepath.Join(dir, matches[1]))
 		}
 	}
