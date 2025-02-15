@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -21,9 +20,6 @@ func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 	backend := getBackend(texPath)
 	// Configure logging
 	pdfName := filepath.Base(strings.TrimSuffix(texPath, ".tex") + ".pdf")
-	log := func(s string) {
-		fmt.Printf("\x1b[1m[%s]\x1b[0m: %s\n", pdfName, s)
-	}
 
 	latex := func() {
 		cmd := exec.Command(backend,
@@ -38,7 +34,7 @@ func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 		scanner := bufio.NewScanner(stdout)
 		cmd.Start()
 		for scanner.Scan() {
-			log(scanner.Text())
+			log(scanner.Text(), pdfName)
 		}
 		// Wait for process to close
 		cmd.Wait()
@@ -56,7 +52,7 @@ func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 		scanner := bufio.NewScanner(stdout)
 		cmd.Start()
 		for scanner.Scan() {
-			log(scanner.Text())
+			log(scanner.Text(), pdfName)
 		}
 		// Wait for process to close
 		cmd.Wait()
@@ -74,7 +70,7 @@ func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 		scanner := bufio.NewScanner(stdout)
 		cmd.Start()
 		for scanner.Scan() {
-			log(scanner.Text())
+			log(scanner.Text(), pdfName)
 		}
 		// Wait for process to close
 		cmd.Wait()
@@ -94,6 +90,6 @@ func buildPDF(texPath, bibBackend string, wg *sync.WaitGroup) {
 		latex()
 	}
 
-	log("Done!")
+	log("Done!", pdfName)
 	wg.Done()
 }

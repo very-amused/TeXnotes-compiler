@@ -36,8 +36,14 @@ func checkFile(infile, outfile string) (skipBuild bool, bibBackend string) {
 				// Check biber dependency modtimes
 				for _, bibPath := range bibDepends {
 					bibStat := stat(bibPath)
-					// TODO: warn about missing bibDepends
-					if bibStat != nil && (*bibStat).ModTime().Unix() > pdfModTime {
+					// Warn about missing bibDepends
+					if bibStat == nil {
+						pdfName := filepath.Base(outfile)
+						bibName := filepath.Base(bibPath)
+						log(fmt.Sprintf("Warning: missing bibDepend %s", bibName), pdfName)
+						continue
+					}
+					if (*bibStat).ModTime().Unix() > pdfModTime {
 						skipBuild = false
 						break
 					}
@@ -172,4 +178,9 @@ func stat(path string) *fs.FileInfo {
 		fmt.Fprintf(os.Stderr, "ERROR: Failed to run stat on %s - %s\n", path, err)
 	}
 	return nil
+}
+
+// Log output labeled with pdfName
+func log(s, pdfName string) {
+	fmt.Printf("\x1b[1m[%s]\x1b[0m: %s\n", pdfName, s)
 }
