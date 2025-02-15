@@ -36,7 +36,8 @@ func checkFile(infile, outfile string) (skipBuild bool, bibBackend string) {
 				// Check biber dependency modtimes
 				for _, bibPath := range bibDepends {
 					bibStat := stat(bibPath)
-					if bibStat == nil || (*bibStat).ModTime().Unix() > pdfModTime {
+					// TODO: warn about missing bibDepends
+					if bibStat != nil && (*bibStat).ModTime().Unix() > pdfModTime {
 						skipBuild = false
 						break
 					}
