@@ -16,10 +16,9 @@ func main() {
 	// Whether to delete all pdf files associated with tex files
 	var clean bool
 	// Parse args
-	for i, arg := range os.Args[:len(os.Args)-1] {
+	for i, arg := range os.Args[:len(os.Args)] {
 		if arg == "clean" {
 			clean = true
-			fmt.Fprintln(os.Stderr, "'clean' argument was passed")
 			continue
 		}
 		if strings.HasPrefix(arg, "-o") {
