@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -12,8 +13,14 @@ import (
 func main() {
 	// Input/output files for single-file mode
 	var infile, outfile string
+	// Whether to delete all pdf files associated with tex files
+	var clean bool
 	// Parse args
 	for i, arg := range os.Args[:len(os.Args)-1] {
+		if arg == "clean" {
+			clean = true
+			continue
+		}
 		if strings.HasPrefix(arg, "-o") {
 			if len(arg) > 2 {
 				outfile = arg[2:]
@@ -30,6 +37,28 @@ func main() {
 	}
 	fmt.Println("Running TeXnotes compiler")
 	var wg sync.WaitGroup
+
+	// Clean tex-associated PDF files if requested
+	if clean {
+		filepath.WalkDir(".", func(infile string, _ fs.DirEntry, _ error) error {
+			// Skip non-tex files
+			if !strings.HasSuffix(infile, ".tex") {
+				return nil
+			}
+
+			// Delete PDF
+			outfile := strings.TrimSuffix(infile, ".tex") + ".pdf"
+			err := os.Remove(outfile)
+			if err == nil {
+				log("Deleted", outfile)
+			} else if !errors.Is(err, os.ErrNotExist) {
+				log(fmt.Sprintf("Failed to delete: %s", err), outfile)
+			}
+
+			return nil
+		})
+		return
+	}
 
 	// If an infile is provided, run in single-file mode
 	if len(infile) > 0 {
