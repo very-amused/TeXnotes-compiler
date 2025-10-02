@@ -19,6 +19,7 @@ func main() {
 	for i, arg := range os.Args[:len(os.Args)-1] {
 		if arg == "clean" {
 			clean = true
+			fmt.Fprintln(os.Stderr, "'clean' argument was passed")
 			continue
 		}
 		if strings.HasPrefix(arg, "-o") {
